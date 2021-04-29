@@ -2,12 +2,14 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
+from taggit.managers import TaggableManager
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(status='published')
 
 class Post(models.Model):
+
     status_choices = (
         ('draft', 'Draft'),
         ('published', 'Published'),
@@ -28,6 +30,8 @@ class Post(models.Model):
         choices=status_choices,
         default='draft'
     )
+    
+    tags = TaggableManager()
 
     class Meta:
         ordering = ('-publish',)
@@ -50,3 +54,18 @@ class Post(models.Model):
                 self.publish.day,
                 self.slug
             ])
+
+class Comment(models.Model):
+    post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    email = models.EmailField()
+    body = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering= ('-created',)
+
+    def __str__(self):
+        return f'Comment by {self.name} on {self.post}'
